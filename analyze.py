@@ -62,7 +62,10 @@ class SynthesisManual:
     def parse_file(self):
         with open(self.file_name, 'r') as f:
             for idx, line in enumerate(f):
-                if line.strip().startswith(";") or line.strip() == '':    # skip comments and empty lines
+                pos = line.find(';')
+                if pos != -1:
+                    line = line[:pos]
+                if line.strip() == '':    # skip comments and empty lines
                     continue
                 SynthesisPath(idx, line, self)
 
@@ -162,6 +165,7 @@ class SynthesisGraph:
         assert isinstance(target_names, list)
         assert isinstance(speeds, list)
         assert isinstance(synthesis_manual, SynthesisManual)
+        assert len(target_names) == len(speeds)
         self.synthesis_manual = synthesis_manual
         self.node_dict = {}
         self.target_nodes = []
@@ -181,24 +185,18 @@ class SynthesisGraph:
             self.register_node(name)
         return self.node_dict[name]
     
-    def dump(self):
-        """export to a dot file"""
+    def dump(self,file_name = None):
+        """export to a png file"""
         for nm in self.node_dict.keys():
             self.get_node_by_name(nm).dumped = False
         g = Dot()
         for n in self.target_nodes:
             n.dump_to(g)
         from time import time
-        file_name = '_'.join([n.name for n in self.target_nodes])
-        file_name += '_%d.png'%(time()%100003)
+        if file_name is None:
+            file_name = '_'.join([n.name for n in self.target_nodes])
+            file_name += '_%d.png'%(time()%100003)
         g.write_png(file_name)
-
-def debug_mode():
-    while True:
-        try:
-            print(eval(input(">>> ")))
-        except Exception as e:
-            print(e)
 
 if __name__ == '__main__':
     syn_man = SynthesisManual('data.txt')
